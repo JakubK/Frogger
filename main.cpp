@@ -206,9 +206,9 @@ int main(int argc, char **argv) {
 
 		SDL_FillRect(screen, NULL, czarny);
 
-		DrawSurface(screen, eti,
-		            SCREEN_WIDTH / 2 + sin(distance) * SCREEN_HEIGHT / 3,
-			    SCREEN_HEIGHT / 2 + cos(distance) * SCREEN_HEIGHT / 3);
+		//DrawSurface(screen, eti,
+		//            SCREEN_WIDTH / 2 + sin(distance) * SCREEN_HEIGHT / 3,
+		//	    SCREEN_HEIGHT / 2 + cos(distance) * SCREEN_HEIGHT / 3);
 
 		fpsTimer += delta;
 		if(fpsTimer > 0.5) {
@@ -218,15 +218,35 @@ int main(int argc, char **argv) {
 			};
 
 		// tekst informacyjny / info text
-		DrawRectangle(screen, 4, 4, SCREEN_WIDTH - 8, 36, czerwony, niebieski);
+		//DrawRectangle(screen, 4, 4, SCREEN_WIDTH - 8, 36, czerwony, niebieski);
 		//            "template for the second project, elapsed time = %.1lf s  %.0lf frames / s"
-		sprintf(text, "Szablon drugiego zadania, czas trwania = %.1lf s  %.0lf klatek / s", worldTime, fps);
-		DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 10, text, charset);
+		//sprintf(text, "Szablon drugiego zadania, czas trwania = %.1lf s  %.0lf klatek / s", worldTime, fps);
+		//DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 10, text, charset);
 		//	      "Esc - exit, \030 - faster, \031 - slower"
-		sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie");
-		DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 26, text, charset);
+		//sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie");
+		//DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 26, text, charset);
+
+        //Draw Streets
+
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - SCREEN_HEIGHT/14, SCREEN_WIDTH, SCREEN_HEIGHT/14, czerwony, czerwony);
+
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 7 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, czerwony, czerwony);
+
+        //Draw sea
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 12 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14 * 5, niebieski, niebieski);
+
+
+        //Draw ground
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, zielony, zielony);
+
+        for (int i = 0; i < 5; i++)
+        {
+          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH / 28, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH / 14, SCREEN_HEIGHT / 14, niebieski, niebieski);
+          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH/56, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14 + SCREEN_HEIGHT/56, SCREEN_WIDTH / 28, SCREEN_HEIGHT / 28, zielony, zielony);
+        }
 
 		SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+
 //		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, scrtex, NULL, NULL);
 		SDL_RenderPresent(renderer);
