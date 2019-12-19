@@ -8,8 +8,15 @@ extern "C" {
 #include"SDL2-2.0.10/include/SDL_main.h"
 }
 
-#define SCREEN_WIDTH	640
-#define SCREEN_HEIGHT	480
+#define SCREEN_WIDTH	630
+#define SCREEN_HEIGHT	630
+
+struct Player
+{
+  int X;
+  int Y;
+  int Lives;
+};
 
 
 // narysowanie napisu txt na powierzchni screen, zaczynaj¹c od punktu (x, y)
@@ -133,7 +140,7 @@ int main(int argc, char **argv) {
 	SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-	SDL_SetWindowTitle(window, "Szablon do zdania drugiego 2017");
+	SDL_SetWindowTitle(window, "Frogger");
 
 
 	screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
@@ -188,6 +195,11 @@ int main(int argc, char **argv) {
 	distance = 0;
 	etiSpeed = 1;
 
+    Player player;
+    player.Lives = 1;
+    player.X = 0;
+    player.Y = 13;
+
 	while(!quit) {
 		t2 = SDL_GetTicks();
 
@@ -227,14 +239,11 @@ int main(int argc, char **argv) {
 		//DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 26, text, charset);
 
         //Draw Streets
-
         DrawRectangle(screen, 0, SCREEN_HEIGHT - SCREEN_HEIGHT/14, SCREEN_WIDTH, SCREEN_HEIGHT/14, czerwony, czerwony);
-
         DrawRectangle(screen, 0, SCREEN_HEIGHT - 7 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, czerwony, czerwony);
 
         //Draw sea
         DrawRectangle(screen, 0, SCREEN_HEIGHT - 12 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14 * 5, niebieski, niebieski);
-
 
         //Draw ground
         DrawRectangle(screen, 0, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, zielony, zielony);
@@ -245,6 +254,9 @@ int main(int argc, char **argv) {
           DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH/56, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14 + SCREEN_HEIGHT/56, SCREEN_WIDTH / 28, SCREEN_HEIGHT / 28, zielony, zielony);
         }
 
+        //draw player
+        DrawRectangle(screen, player.X * SCREEN_WIDTH/14, player.Y * SCREEN_HEIGHT/14, SCREEN_WIDTH / 14, SCREEN_HEIGHT / 14, czerwony + zielony, czerwony + zielony);
+
 		SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
 
 //		SDL_RenderClear(renderer);
@@ -254,18 +266,43 @@ int main(int argc, char **argv) {
 		// obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
 		while(SDL_PollEvent(&event)) {
 			switch(event.type) {
-				case SDL_KEYDOWN:
-					if(event.key.keysym.sym == SDLK_ESCAPE) quit = 1;
-					else if(event.key.keysym.sym == SDLK_UP) etiSpeed = 2.0;
-					else if(event.key.keysym.sym == SDLK_DOWN) etiSpeed = 0.3;
-					break;
-				case SDL_KEYUP:
-					etiSpeed = 1.0;
-					break;
-				case SDL_QUIT:
-					quit = 1;
-					break;
-				};
+
+              case SDL_KEYDOWN:
+                switch (event.key.keysym.sym) {
+                case SDLK_LEFT:
+                  if (player.X - 1 >= 0)
+                  {
+                    player.X -= 1;
+                  }
+                  break;
+                case SDLK_RIGHT:
+                  if (player.X +1 <= 13)
+                  {
+                    player.X +=1;
+                  }
+                  break;
+                case SDLK_UP:
+                  if (player.Y - 1 >= 0)
+                  {
+                    player.Y -= 1;
+                  }
+                  break;
+                case SDLK_DOWN:
+                  if (player.Y + 1 <= 13)
+                  {
+                    //printf("%d %d \n", player.Y, SCREEN_HEIGHT - SCREEN_HEIGHT/14);
+                    player.Y += 1;
+                  }
+                  break;
+                default:
+
+                  break;
+                }
+               break;
+			  case SDL_QUIT:
+				  quit = 1;
+				  break;
+			  };
 			};
 		frames++;
 		};
