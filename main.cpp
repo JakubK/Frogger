@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 	SDL_SetWindowTitle(window, "Frogger");
 
 
-	screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
+	screen = SDL_CreateRGBSurface(0, 2 * SCREEN_WIDTH, SCREEN_HEIGHT, 32,
 	                              0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	scrtex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
     Player player;
     player.Lives = 1;
     player.X = 0;
-    player.Y = 13;
+    player.Y = 12;
 
 	while(!quit) {
 		t2 = SDL_GetTicks();
@@ -239,19 +239,19 @@ int main(int argc, char **argv) {
 		//DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 26, text, charset);
 
         //Draw Streets
-        DrawRectangle(screen, 0, SCREEN_HEIGHT - SCREEN_HEIGHT/14, SCREEN_WIDTH, SCREEN_HEIGHT/14, czerwony, czerwony);
-        DrawRectangle(screen, 0, SCREEN_HEIGHT - 7 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, czerwony, czerwony);
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 2 * SCREEN_HEIGHT/14, SCREEN_WIDTH, SCREEN_HEIGHT/14, czerwony, czerwony);
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 8 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, czerwony, czerwony);
 
         //Draw sea
-        DrawRectangle(screen, 0, SCREEN_HEIGHT - 12 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14 * 5, niebieski, niebieski);
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14 * 5, niebieski, niebieski);
 
         //Draw ground
-        DrawRectangle(screen, 0, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, zielony, zielony);
+        DrawRectangle(screen, 0, SCREEN_HEIGHT - 14 * SCREEN_HEIGHT / 14, SCREEN_WIDTH, SCREEN_HEIGHT / 14, zielony, zielony);
 
         for (int i = 0; i < 5; i++)
         {
-          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH / 28, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14, SCREEN_WIDTH / 14, SCREEN_HEIGHT / 14, niebieski, niebieski);
-          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH/56, SCREEN_HEIGHT - 13 * SCREEN_HEIGHT / 14 + SCREEN_HEIGHT/56, SCREEN_WIDTH / 28, SCREEN_HEIGHT / 28, zielony, zielony);
+          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH / 28, SCREEN_HEIGHT - 14 * SCREEN_HEIGHT / 14, SCREEN_WIDTH / 14, SCREEN_HEIGHT / 14, niebieski, niebieski);
+          DrawRectangle(screen, i * (SCREEN_WIDTH / 5) + SCREEN_WIDTH / 5 / 2 - SCREEN_WIDTH/56, SCREEN_HEIGHT - 14 * SCREEN_HEIGHT / 14 + SCREEN_HEIGHT/56, SCREEN_WIDTH / 28, SCREEN_HEIGHT / 28, zielony, zielony);
         }
 
         //draw player
@@ -263,10 +263,8 @@ int main(int argc, char **argv) {
 		SDL_RenderCopy(renderer, scrtex, NULL, NULL);
 		SDL_RenderPresent(renderer);
 
-		// obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
 		while(SDL_PollEvent(&event)) {
 			switch(event.type) {
-
               case SDL_KEYDOWN:
                 switch (event.key.keysym.sym) {
                 case SDLK_LEFT:
@@ -288,7 +286,7 @@ int main(int argc, char **argv) {
                   }
                   break;
                 case SDLK_DOWN:
-                  if (player.Y + 1 <= 13)
+                  if (player.Y + 1 <= 12)
                   {
                     //printf("%d %d \n", player.Y, SCREEN_HEIGHT - SCREEN_HEIGHT/14);
                     player.Y += 1;
