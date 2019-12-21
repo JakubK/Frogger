@@ -25,6 +25,12 @@ struct MovingEntity
   int velocity;
 };
 
+struct Endpoint
+{
+  Entity entity;
+  int activated;
+};
+
 bool Intersects(Entity first, Entity second)
 {
   if (first.X < second.X + second.Width 
@@ -129,7 +135,7 @@ int main(int argc, char **argv) {
   SDL_Event event;
   SDL_Surface *screen, *charset;
   SDL_Surface *eti;
-  SDL_Surface *river, *road, *brick1, *frogger;
+  SDL_Surface *river, *road, *brick1, *frogger, *froggo;
   SDL_Surface *froggger;
   SDL_Surface *car;
   SDL_Texture *scrtex;
@@ -174,6 +180,56 @@ int main(int argc, char **argv) {
     SDL_TEXTUREACCESS_STREAMING,
     SCREEN_WIDTH, SCREEN_HEIGHT);
 
+  MovingEntity vehicles[5];
+  for (int i = 0; i < 5; i++)
+  {
+    vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
+    vehicles[i].velocity = 80 * (i + 1);
+    vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE / 2;
+    vehicles[i].entity.X = SCREEN_WIDTH / 2;
+
+    vehicles[i].entity.Width = CELL_SIZE;
+    vehicles[i].entity.Height = CELL_SIZE;
+  }
+
+  MovingEntity logs[3];
+  for (int i = 0; i < 3; i++)
+  {
+    logs[i].direction = -1;
+    logs[i].velocity = 100;
+    logs[i].entity.Y = (1 + i) * CELL_SIZE + CELL_SIZE / 2;
+    logs[i].entity.X = SCREEN_WIDTH / 2;
+
+    logs[i].entity.Width = CELL_SIZE;
+    logs[i].entity.Height = CELL_SIZE;
+  }
+
+  MovingEntity turtles[2];
+  for (int i = 0; i < 2; i++)
+  {
+    turtles[i].direction = 1;
+    turtles[i].velocity = 50;
+    turtles[i].entity.Y = (4 + i) * CELL_SIZE + CELL_SIZE / 2;
+    turtles[i].entity.X = SCREEN_WIDTH / 2;
+
+    turtles[i].entity.Width = CELL_SIZE;
+    turtles[i].entity.Height = CELL_SIZE;
+  }
+
+  Endpoint endpoints[5];
+  for (int i = 0; i < 5; i++)
+  {
+    endpoints[i].activated = 0;
+    endpoints[i].entity.Y = CELL_SIZE/2;
+    endpoints[i].entity.X = SCREEN_WIDTH/5/2 + i * SCREEN_WIDTH / 5;
+    endpoints[i].entity.Width = endpoints[i].entity.Height = CELL_SIZE;
+  }
+
+  Entity player;
+  player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
+  player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+  player.Width = player.Height = CELL_SIZE;
+
 
   // wy³¹czenie widocznoœci kursora myszy
   //SDL_ShowCursor(SDL_DISABLE);
@@ -190,6 +246,12 @@ int main(int argc, char **argv) {
   eti = SDL_LoadBMP("eti.bmp");
   if (eti == NULL) {
     printf("SDL_LoadBMP(eti.bmp) error: %s\n", SDL_GetError());
+    CloseSDL(screen, scrtex, window, renderer);
+    return 1;
+  };
+  froggo = SDL_LoadBMP("froggie.bmp");
+  if (froggo == NULL) {
+    printf("SDL_LoadBMP(froggie.bmp) error: %s\n", SDL_GetError());
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
@@ -242,47 +304,7 @@ int main(int argc, char **argv) {
   distance = 0;
   etiSpeed = 1;
 
-  MovingEntity vehicles[5];
-  for (int i = 0; i < 5; i++)
-  {
-    vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
-    vehicles[i].velocity = 80 * (i+1);
-    vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE/2;
-    vehicles[i].entity.X = SCREEN_WIDTH / 2;
-
-    vehicles[i].entity.Width = CELL_SIZE;
-    vehicles[i].entity.Height = CELL_SIZE;
-  }
-
-  MovingEntity logs[3];
-  for (int i = 0; i < 3; i++)
-  {
-    logs[i].direction = -1;
-    logs[i].velocity = 100;
-    logs[i].entity.Y = (1 + i) * CELL_SIZE + CELL_SIZE / 2;
-    logs[i].entity.X = SCREEN_WIDTH / 2;
-
-    logs[i].entity.Width = CELL_SIZE;
-    logs[i].entity.Height = CELL_SIZE;
-  }
-
-  MovingEntity turtles[2];
-  for (int i = 0; i < 2; i++)
-  {
-    turtles[i].direction = 1;
-    turtles[i].velocity = 50;
-    turtles[i].entity.Y = (4 + i) * CELL_SIZE + CELL_SIZE / 2;
-    turtles[i].entity.X = SCREEN_WIDTH / 2;
-
-    turtles[i].entity.Width = CELL_SIZE;
-    turtles[i].entity.Height = CELL_SIZE;
-  }
   
-
-  Entity player;
-  player.X = 7 * CELL_SIZE + CELL_SIZE/2;
-  player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
-  player.Width = player.Height = CELL_SIZE;
 
   while (!quit) {
     t2 = SDL_GetTicks();
@@ -346,7 +368,7 @@ int main(int argc, char **argv) {
         quit = 1;
     }
 
-    //Check if frog intersects with Log/Turtle
+    //Check if frog intersects with Log/Turtle/Endpoint
     if (player.Y > 0 && player.Y < CELL_SIZE * 6)
     {
       bool intersects = false;
@@ -366,8 +388,24 @@ int main(int argc, char **argv) {
           player.X += turtles[i].velocity * delta * turtles[i].direction;
         }
       }
+      for (int i = 0; i < 5; i++)
+      {
+        if (Intersects(player, endpoints[i].entity))
+        {
+          intersects = true;
+          endpoints[i].activated = 1;
+
+          //respawn player
+          player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
+          player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+        }
+      }
       if (!intersects)
         quit = 1;
+    }
+    else //try to clamp the position X
+    {
+      
     }
     SDL_FillRect(screen, NULL, ciemnoszary);
 
@@ -420,7 +458,21 @@ int main(int argc, char **argv) {
         vehicles[i].entity.Y);
     }
 
-  
+    for (int i = 0; i < 5; i++)
+    {
+      if (endpoints[i].activated)
+      {
+        DrawSurface(screen, froggo,
+          endpoints[i].entity.X,
+          endpoints[i].entity.Y);
+      }
+      else
+      {
+        DrawSurface(screen, brick1,
+          endpoints[i].entity.X,
+          endpoints[i].entity.Y);
+      }
+    }
 
     fpsTimer += delta;
     if (fpsTimer > 0.5) {
