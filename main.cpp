@@ -25,6 +25,15 @@ struct MovingEntity
   int velocity;
 };
 
+bool Intersects(Entity first, Entity second)
+{
+  if (first.X < second.X + second.Width 
+    && first.X + first.Width > second.X
+    && first.Y < second.Y + second.Height
+    && first.Y + first.Height > second.Y)
+    return true;
+  return false;
+}
 
 // narysowanie napisu txt na powierzchni screen, zaczynaj¹c od punktu (x, y)
 // charset to bitmapa 128x128 zawieraj¹ca znaki
@@ -249,15 +258,18 @@ int main(int argc, char **argv) {
   for (int i = 0; i < 5; i++)
   {
     vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
-    vehicles[i].velocity = 80;
-    vehicles[i].entity.Y = (7 + i) * CELL_SIZE;
+    vehicles[i].velocity = 80 * (i+1);
+    vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE/2;
     vehicles[i].entity.X = SCREEN_WIDTH / 2;
+
+    vehicles[i].entity.Width = CELL_SIZE;
+    vehicles[i].entity.Height = CELL_SIZE;
   }
   
 
   Entity player;
-  player.X = 7 * CELL_SIZE;
-  player.Y = 12 * CELL_SIZE;
+  player.X = 7 * CELL_SIZE + CELL_SIZE/2;
+  player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
   player.Width = player.Height = CELL_SIZE;
 
   while (!quit) {
@@ -278,9 +290,7 @@ int main(int argc, char **argv) {
 
     //move each vehicle
     for (int i = 0; i < 5; i++)
-    {
       vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
-    }
     //check if it's urgent to respawn it on the opposite side
     for (int i = 0; i < 5; i++)
     {
@@ -293,6 +303,14 @@ int main(int argc, char **argv) {
       {
         if (vehicles[i].entity.X > 2*SCREEN_WIDTH)
           vehicles[i].entity.X = 0;
+      }
+    }
+
+    for (int i = 0; i < 5; i++)
+    {
+      if (Intersects(player, vehicles[i].entity))
+      {
+        SDL_Quit();
       }
     }
 
@@ -326,14 +344,14 @@ int main(int argc, char **argv) {
       CELL_SIZE / 2 + 3 * CELL_SIZE);
 
     DrawSurface(screen, frogger,
-      CELL_SIZE / 2 + player.X,
-      CELL_SIZE / 2 + player.Y);
+      player.X,
+      player.Y);
 
     for (int i = 0; i < 5; i++)
     {
       DrawSurface(screen, car,
-        CELL_SIZE / 2 + vehicles[i].entity.X,
-        CELL_SIZE / 2 + vehicles[i].entity.Y);
+        vehicles[i].entity.X,
+        vehicles[i].entity.Y);
     }
 
 
@@ -373,7 +391,7 @@ int main(int argc, char **argv) {
         }
         else if (event.key.keysym.sym == SDLK_DOWN)
         {
-          if(player.Y + CELL_SIZE <= CELL_SIZE * 12)
+          if(player.Y + CELL_SIZE <= CELL_SIZE * 13)
             player.Y += CELL_SIZE;
         }
         else if (event.key.keysym.sym == SDLK_LEFT)
