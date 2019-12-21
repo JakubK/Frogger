@@ -342,6 +342,9 @@ int main(int argc, char **argv) {
 
     SDL_FillRect(screen, NULL, ciemnoszary);
 
+    //Check if Frog is out of Screen
+    if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
+      SDL_Quit();
 
 
     DrawSurface(screen, river,
