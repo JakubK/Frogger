@@ -271,6 +271,18 @@ int main(int argc, char **argv) {
     logs[i].entity.Width = CELL_SIZE;
     logs[i].entity.Height = CELL_SIZE;
   }
+
+  MovingEntity turtles[2];
+  for (int i = 0; i < 2; i++)
+  {
+    turtles[i].direction = 1;
+    turtles[i].velocity = 50;
+    turtles[i].entity.Y = (4 + i) * CELL_SIZE + CELL_SIZE / 2;
+    turtles[i].entity.X = SCREEN_WIDTH / 2;
+
+    turtles[i].entity.Width = CELL_SIZE;
+    turtles[i].entity.Height = CELL_SIZE;
+  }
   
 
   Entity player;
@@ -301,6 +313,11 @@ int main(int argc, char **argv) {
     //move each log
     for(int i = 0;i < 3;i++)
       logs[i].entity.X += logs[i].velocity * delta * logs[i].direction;
+
+    //move each turtle
+    for (int i = 0; i < 2; i++)
+      turtles[i].entity.X += turtles[i].velocity * delta * turtles[i].direction;
+
     //check if it's urgent to respawn it on the opposite side
     for (int i = 0; i < 5; i++)
     {
@@ -322,6 +339,12 @@ int main(int argc, char **argv) {
           logs[i].entity.X = 0;
     }
 
+    for (int i = 0; i < 2; i++)
+    {
+      if (turtles[i].entity.X >  2 * SCREEN_WIDTH)
+        turtles[i].entity.X = 0;
+    }
+
     //Check if frog intersects with the car
     for (int i = 0; i < 5; i++)
     {
@@ -332,14 +355,30 @@ int main(int argc, char **argv) {
     }
 
     //Check if frog intersects with Log/Turtle
-    for (int i = 0; i < 3; i++)
+    if (player.Y > CELL_SIZE && player.Y < CELL_SIZE * 6)
     {
-      if (Intersects(player, logs[i].entity))
+      bool intersects = false;
+      for (int i = 0; i < 3; i++)
       {
-        player.X += logs[i].velocity * delta * logs[i].direction;
+        if (Intersects(player, logs[i].entity))
+        {
+          intersects = true;
+          player.X += logs[i].velocity * delta * logs[i].direction;
+        }
+      }
+      for (int i = 0; i < 2; i++)
+      {
+        if (Intersects(player, turtles[i].entity))
+        {
+          intersects = true;
+          player.X += turtles[i].velocity * delta * turtles[i].direction;
+        }
+      }
+      if (!intersects)
+      {
+        SDL_Quit();
       }
     }
-
     SDL_FillRect(screen, NULL, ciemnoszary);
 
     //Check if Frog is out of Screen
@@ -370,6 +409,20 @@ int main(int argc, char **argv) {
       CELL_SIZE / 2 + 6 * CELL_SIZE,
       CELL_SIZE / 2 + 3 * CELL_SIZE);
 
+    for (int i = 0; i < 3; i++)
+    {
+      DrawSurface(screen, car,
+        logs[i].entity.X,
+        logs[i].entity.Y);
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+      DrawSurface(screen, car,
+        turtles[i].entity.X,
+        turtles[i].entity.Y);
+    }
+
     DrawSurface(screen, frogger,
       player.X,
       player.Y);
@@ -381,12 +434,7 @@ int main(int argc, char **argv) {
         vehicles[i].entity.Y);
     }
 
-    for (int i = 0; i < 3; i++)
-    {
-      DrawSurface(screen, car,
-        logs[i].entity.X,
-        logs[i].entity.Y);
-    }
+  
 
     fpsTimer += delta;
     if (fpsTimer > 0.5) {
@@ -394,7 +442,6 @@ int main(int argc, char **argv) {
       frames = 0;
       fpsTimer -= 0.5;
     };
-
 
     // tekst informacyjny / info text
     DrawRectangle(screen, 4, SCREEN_HEIGHT - INFOBOX_OFFSET, SCREEN_WIDTH - 8, 18, zieloniutki, czarny);
@@ -433,7 +480,7 @@ int main(int argc, char **argv) {
         }
         else if (event.key.keysym.sym == SDLK_RIGHT)
         {
-          if(player.X + CELL_SIZE <= CELL_SIZE * 13)
+          if(player.X + CELL_SIZE <= CELL_SIZE * 14)
             player.X += CELL_SIZE;
         }
         break;
