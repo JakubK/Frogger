@@ -13,6 +13,10 @@ extern "C" {
 #define CELL_SIZE		SCREEN_WIDTH/14
 #define FROG_SPEED		2
 
+#define LOGS_IN_ROW 5
+
+#define TURTLES_IN_ROW 3
+
 struct Entity
 {
   float X, Y, Width, Height;
@@ -192,28 +196,34 @@ int main(int argc, char **argv) {
     vehicles[i].entity.Height = CELL_SIZE;
   }
 
-  MovingEntity logs[3];
+  MovingEntity logs[3][LOGS_IN_ROW];
   for (int i = 0; i < 3; i++)
   {
-    logs[i].direction = -1;
-    logs[i].velocity = 100;
-    logs[i].entity.Y = (1 + i) * CELL_SIZE + CELL_SIZE / 2;
-    logs[i].entity.X = SCREEN_WIDTH / 2;
+    for (int j = 0; j < LOGS_IN_ROW; j++)
+    {
+      logs[i][j].direction = -1;
+      logs[i][j].velocity = 100 * (i+1);
+      logs[i][j].entity.Y = i == 0 ? CELL_SIZE + CELL_SIZE / 2 : (2 + i) * CELL_SIZE + CELL_SIZE / 2;
+      logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2;
 
-    logs[i].entity.Width = CELL_SIZE;
-    logs[i].entity.Height = CELL_SIZE;
+      logs[i][j].entity.Width = CELL_SIZE;
+      logs[i][j].entity.Height = CELL_SIZE;
+    }   
   }
 
-  MovingEntity turtles[2];
+  MovingEntity turtles[2][3];
   for (int i = 0; i < 2; i++)
   {
-    turtles[i].direction = 1;
-    turtles[i].velocity = 50;
-    turtles[i].entity.Y = (4 + i) * CELL_SIZE + CELL_SIZE / 2;
-    turtles[i].entity.X = SCREEN_WIDTH / 2;
+    for (int j = 0; j < TURTLES_IN_ROW; j++)
+    {
+      turtles[i][j].direction = 1;
+      turtles[i][j].velocity = 110;
+      turtles[i][j].entity.Y = i == 0 ? 2 * CELL_SIZE + CELL_SIZE / 2 : 5 * CELL_SIZE + CELL_SIZE / 2;
+      turtles[i][j].entity.X = (j * 8) * CELL_SIZE + SCREEN_WIDTH / 2;
 
-    turtles[i].entity.Width = CELL_SIZE;
-    turtles[i].entity.Height = CELL_SIZE;
+      turtles[i][j].entity.Width = CELL_SIZE;
+      turtles[i][j].entity.Height = CELL_SIZE;
+    }
   }
 
   Endpoint endpoints[5];
@@ -252,12 +262,6 @@ int main(int argc, char **argv) {
   froggo = SDL_LoadBMP("froggie.bmp");
   if (froggo == NULL) {
     printf("SDL_LoadBMP(froggie.bmp) error: %s\n", SDL_GetError());
-    CloseSDL(screen, scrtex, window, renderer);
-    return 1;
-  };
-  river = SDL_LoadBMP("river.bmp");
-  if (river == NULL) {
-    printf("SDL_LoadBMP(river.bmp) error: %s\n", SDL_GetError());
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
@@ -304,8 +308,6 @@ int main(int argc, char **argv) {
   distance = 0;
   etiSpeed = 1;
 
-  
-
   while (!quit) {
     t2 = SDL_GetTicks();
 
@@ -327,12 +329,18 @@ int main(int argc, char **argv) {
       vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
 
     //move each log
-    for(int i = 0;i < 3;i++)
-      logs[i].entity.X += logs[i].velocity * delta * logs[i].direction;
+    for (int i = 0; i < 3; i++)
+    {
+      for (int j = 0; j < LOGS_IN_ROW; j++)
+      {
+        logs[i][j].entity.X += logs[i][j].velocity * delta * logs[i][j].direction;
+      }
+    }
 
     //move each turtle
     for (int i = 0; i < 2; i++)
-      turtles[i].entity.X += turtles[i].velocity * delta * turtles[i].direction;
+      for(int j = 0;j < TURTLES_IN_ROW;j++)
+      turtles[i][j].entity.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
 
     //check if it's urgent to respawn it on the opposite side
     for (int i = 0; i < 5; i++)
@@ -351,14 +359,19 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 3; i++)
     {
-      if (logs[i].entity.X < -SCREEN_WIDTH)
-        logs[i].entity.X = SCREEN_WIDTH;
+      for (int j = 0; j < LOGS_IN_ROW; j++)
+      {
+        if (logs[i][j].entity.X < -SCREEN_WIDTH)
+          logs[i][j].entity.X = SCREEN_WIDTH;
+      }
+      
     }
 
     for (int i = 0; i < 2; i++)
     {
-      if (turtles[i].entity.X >  2 * SCREEN_WIDTH)
-        turtles[i].entity.X = 0;
+      for(int j = 0;j < TURTLES_IN_ROW;j++)
+        if (turtles[i][j].entity.X >  2 * SCREEN_WIDTH)
+          turtles[i][j].entity.X = 0;
     }
 
     //Check if frog intersects with the car
@@ -374,18 +387,25 @@ int main(int argc, char **argv) {
       bool intersects = false;
       for (int i = 0; i < 3; i++)
       {
-        if (Intersects(player, logs[i].entity))
+        for (int j = 0; j < LOGS_IN_ROW; j++)
         {
-          intersects = true;
-          player.X += logs[i].velocity * delta * logs[i].direction;
+          if (Intersects(player, logs[i][j].entity))
+          {
+            intersects = true;
+            player.X += logs[i][j].velocity * delta * logs[i][j].direction;
+          }
         }
+        
       }
       for (int i = 0; i < 2; i++)
       {
-        if (Intersects(player, turtles[i].entity))
+        for (int j = 0; j < TURTLES_IN_ROW; j++)
         {
-          intersects = true;
-          player.X += turtles[i].velocity * delta * turtles[i].direction;
+          if (Intersects(player, turtles[i][j].entity))
+          {
+            intersects = true;
+            player.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+          }
         }
       }
       for (int i = 0; i < 5; i++)
@@ -407,15 +427,13 @@ int main(int argc, char **argv) {
     {
       
     }
-    SDL_FillRect(screen, NULL, ciemnoszary);
+    SDL_FillRect(screen, NULL, niebieski);
 
     //Check if Frog is out of Screen
     if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
       quit = 1;
 
-    DrawSurface(screen, river,
-      SCREEN_WIDTH / 2,
-      3 * CELL_SIZE);
+ 
     DrawSurface(screen, road,
       SCREEN_WIDTH / 2,
       CELL_SIZE / 2 + 9 * CELL_SIZE);
@@ -435,16 +453,22 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 3; i++)
     {
-      DrawSurface(screen, car,
-        logs[i].entity.X,
-        logs[i].entity.Y);
+      for (int j = 0; j < LOGS_IN_ROW; j++)
+      {
+        DrawSurface(screen, car,
+          logs[i][j].entity.X,
+          logs[i][j].entity.Y);
+      } 
     }
 
     for (int i = 0; i < 2; i++)
     {
-      DrawSurface(screen, car,
-        turtles[i].entity.X,
-        turtles[i].entity.Y);
+      for (int j = 0; j < TURTLES_IN_ROW; j++)
+      {
+        DrawSurface(screen, car,
+          turtles[i][j].entity.X,
+          turtles[i][j].entity.Y);
+      }
     }
 
     DrawSurface(screen, frogger,
