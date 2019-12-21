@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
   SDL_Surface *screen, *charset;
   SDL_Surface *eti;
   SDL_Surface *river, *road, *brick1, *frogger;
-  SDL_Surface *froggger, *bee;
+  SDL_Surface *froggger;
   SDL_Surface *crocodilebody, *car;
   SDL_Texture *scrtex;
   SDL_Window *window;
@@ -217,12 +217,6 @@ int main(int argc, char **argv) {
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
-  bee = SDL_LoadBMP("bee.bmp");
-  if (bee == NULL) {
-    printf("SDL_LoadBMP(bee.bmp) error: %s\n", SDL_GetError());
-    CloseSDL(screen, scrtex, window, renderer);
-    return 1;
-  };
   crocodilebody = SDL_LoadBMP("crocodilebody.bmp");
   if (crocodilebody == NULL) {
     printf("SDL_LoadBMP(crocodilebody.bmp) error: %s\n", SDL_GetError());
@@ -265,6 +259,18 @@ int main(int argc, char **argv) {
     vehicles[i].entity.Width = CELL_SIZE;
     vehicles[i].entity.Height = CELL_SIZE;
   }
+
+  MovingEntity logs[3];
+  for (int i = 0; i < 3; i++)
+  {
+    logs[i].direction = -1;
+    logs[i].velocity = 100;
+    logs[i].entity.Y = (1 + i) * CELL_SIZE + CELL_SIZE / 2;
+    logs[i].entity.X = SCREEN_WIDTH / 2;
+
+    logs[i].entity.Width = CELL_SIZE;
+    logs[i].entity.Height = CELL_SIZE;
+  }
   
 
   Entity player;
@@ -291,6 +297,10 @@ int main(int argc, char **argv) {
     //move each vehicle
     for (int i = 0; i < 5; i++)
       vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
+
+    //move each log
+    for(int i = 0;i < 3;i++)
+      logs[i].entity.X += logs[i].velocity * delta * logs[i].direction;
     //check if it's urgent to respawn it on the opposite side
     for (int i = 0; i < 5; i++)
     {
@@ -306,6 +316,13 @@ int main(int argc, char **argv) {
       }
     }
 
+    for (int i = 0; i < 3; i++)
+    {
+        if (logs[i].entity.X > 2 * SCREEN_WIDTH)
+          logs[i].entity.X = 0;
+    }
+
+    //Check if frog intersects with the car
     for (int i = 0; i < 5; i++)
     {
       if (Intersects(player, vehicles[i].entity))
@@ -314,7 +331,17 @@ int main(int argc, char **argv) {
       }
     }
 
+    //Check if frog intersects with Log/Turtle
+    for (int i = 0; i < 3; i++)
+    {
+      if (Intersects(player, logs[i].entity))
+      {
+        player.X += logs[i].velocity * delta * logs[i].direction;
+      }
+    }
+
     SDL_FillRect(screen, NULL, ciemnoszary);
+
 
 
     DrawSurface(screen, river,
@@ -336,9 +363,6 @@ int main(int argc, char **argv) {
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 12 * CELL_SIZE);
     }
-    DrawSurface(screen, bee,
-      CELL_SIZE / 2 + 7 * CELL_SIZE,
-      CELL_SIZE / 2 + 0 * CELL_SIZE);
     DrawSurface(screen, crocodilebody,
       CELL_SIZE / 2 + 6 * CELL_SIZE,
       CELL_SIZE / 2 + 3 * CELL_SIZE);
@@ -354,7 +378,12 @@ int main(int argc, char **argv) {
         vehicles[i].entity.Y);
     }
 
-
+    for (int i = 0; i < 3; i++)
+    {
+      DrawSurface(screen, car,
+        logs[i].entity.X,
+        logs[i].entity.Y);
+    }
 
     fpsTimer += delta;
     if (fpsTimer > 0.5) {
