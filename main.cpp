@@ -13,6 +13,18 @@ extern "C" {
 #define CELL_SIZE		SCREEN_WIDTH/14
 #define FROG_SPEED		2
 
+struct Entity
+{
+  float X, Y, Width, Height;
+};
+
+struct MovingEntity
+{
+  Entity entity;
+  int direction;
+  int velocity;
+};
+
 
 // narysowanie napisu txt na powierzchni screen, zaczynaj¹c od punktu (x, y)
 // charset to bitmapa 128x128 zawieraj¹ca znaki
@@ -108,8 +120,8 @@ int main(int argc, char **argv) {
   SDL_Event event;
   SDL_Surface *screen, *charset;
   SDL_Surface *eti;
-  SDL_Surface *river, *road, *brick1, *brick2, *frogger;
-  SDL_Surface *froggger, *bee, *froggie;
+  SDL_Surface *river, *road, *brick1, *frogger;
+  SDL_Surface *froggger, *bee;
   SDL_Surface *crocodilebody, *car;
   SDL_Texture *scrtex;
   SDL_Window *window;
@@ -123,13 +135,10 @@ int main(int argc, char **argv) {
   // the option:
   // project -> szablon2 properties -> Linker -> System -> Subsystem
   // must be changed to "Console"
-  printf("Keep your chin up! \n");
-
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
     printf("SDL_Init error: %s\n", SDL_GetError());
     return 1;
   }
-
   // tryb pe³noekranowy / fullscreen mode
   //rc = SDL_CreateWindowAndRenderer(0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP,
   //  &window, &renderer);
@@ -193,12 +202,6 @@ int main(int argc, char **argv) {
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
-  brick2 = SDL_LoadBMP("brick2.bmp");
-  if (brick2 == NULL) {
-    printf("SDL_LoadBMP(brick2.bmp) error: %s\n", SDL_GetError());
-    CloseSDL(screen, scrtex, window, renderer);
-    return 1;
-  };
   frogger = SDL_LoadBMP("frogger.bmp");
   if (frogger == NULL) {
     printf("SDL_LoadBMP(frogger.bmp) error: %s\n", SDL_GetError());
@@ -208,12 +211,6 @@ int main(int argc, char **argv) {
   bee = SDL_LoadBMP("bee.bmp");
   if (bee == NULL) {
     printf("SDL_LoadBMP(bee.bmp) error: %s\n", SDL_GetError());
-    CloseSDL(screen, scrtex, window, renderer);
-    return 1;
-  };
-  froggie = SDL_LoadBMP("froggie.bmp");
-  if (froggie == NULL) {
-    printf("SDL_LoadBMP(froggie.bmp) error: %s\n", SDL_GetError());
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
@@ -247,10 +244,21 @@ int main(int argc, char **argv) {
   worldTime = 0;
   distance = 0;
   etiSpeed = 1;
-  double car_pos = 0;
-  int car_speed = 80;
-  int frog_x = 7, frog_y = 12;
-  float frog_temp_x = frog_x, frog_temp_y;
+
+  MovingEntity vehicles[5];
+  for (int i = 0; i < 5; i++)
+  {
+    vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
+    vehicles[i].velocity = 80;
+    vehicles[i].entity.Y = (7 + i) * CELL_SIZE;
+    vehicles[i].entity.X = SCREEN_WIDTH / 2;
+  }
+  
+
+  Entity player;
+  player.X = 7 * CELL_SIZE;
+  player.Y = 12 * CELL_SIZE;
+  player.Width = player.Height = CELL_SIZE;
 
   while (!quit) {
     t2 = SDL_GetTicks();
@@ -268,8 +276,25 @@ int main(int argc, char **argv) {
 
     distance += etiSpeed * delta;
 
-
-    car_pos += car_speed * delta;
+    //move each vehicle
+    for (int i = 0; i < 5; i++)
+    {
+      vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
+    }
+    //check if it's urgent to respawn it on the opposite side
+    for (int i = 0; i < 5; i++)
+    {
+      if (vehicles[i].direction == -1)
+      {
+        if (vehicles[i].entity.X < -SCREEN_WIDTH)
+          vehicles[i].entity.X = SCREEN_WIDTH;
+      }
+      else
+      {
+        if (vehicles[i].entity.X > 2*SCREEN_WIDTH)
+          vehicles[i].entity.X = 0;
+      }
+    }
 
     SDL_FillRect(screen, NULL, ciemnoszary);
 
@@ -283,51 +308,35 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 14; i++)
     {
-      if (i % 2 == 0)
-      {
         DrawSurface(screen, brick1,
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 6 * CELL_SIZE);
-      }
-      if (i % 2 == 1)
-      {
-        DrawSurface(screen, brick2,
-          CELL_SIZE / 2 + i * CELL_SIZE,
-          CELL_SIZE / 2 + 6 * CELL_SIZE);
-      }
-
     }
     for (int i = 0; i < 14; i++)
     {
-      if (i % 2 == 0)
-      {
-        DrawSurface(screen, brick2,
-          CELL_SIZE / 2 + i * CELL_SIZE,
-          CELL_SIZE / 2 + 12 * CELL_SIZE);
-      }
-      if (i % 2 == 1)
-      {
         DrawSurface(screen, brick1,
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 12 * CELL_SIZE);
-      }
-
     }
     DrawSurface(screen, bee,
       CELL_SIZE / 2 + 7 * CELL_SIZE,
       CELL_SIZE / 2 + 0 * CELL_SIZE);
-    DrawSurface(screen, froggie,
-      CELL_SIZE / 2 + 8 * CELL_SIZE,
-      CELL_SIZE / 2 + 3 * CELL_SIZE);
     DrawSurface(screen, crocodilebody,
       CELL_SIZE / 2 + 6 * CELL_SIZE,
       CELL_SIZE / 2 + 3 * CELL_SIZE);
-    DrawSurface(screen, car,
-      CELL_SIZE / 2 + 12 * CELL_SIZE - car_pos,
-      CELL_SIZE / 2 + 10 * CELL_SIZE);
+
     DrawSurface(screen, frogger,
-      CELL_SIZE / 2 + frog_x * CELL_SIZE,
-      CELL_SIZE / 2 + frog_y * CELL_SIZE);
+      CELL_SIZE / 2 + player.X,
+      CELL_SIZE / 2 + player.Y);
+
+    for (int i = 0; i < 5; i++)
+    {
+      DrawSurface(screen, car,
+        CELL_SIZE / 2 + vehicles[i].entity.X,
+        CELL_SIZE / 2 + vehicles[i].entity.Y);
+    }
+
+
 
     fpsTimer += delta;
     if (fpsTimer > 0.5) {
@@ -355,17 +364,28 @@ int main(int argc, char **argv) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
       case SDL_KEYDOWN:
-        if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q) quit = 1;
-        else if (event.key.keysym.sym == SDLK_UP) frog_y--;//etiSpeed += 2.0;
-        else if (event.key.keysym.sym == SDLK_DOWN) frog_y++;//etiSpeed = 0.3;
-        else if (event.key.keysym.sym == SDLK_LEFT) frog_x--;//etiSpeed += 2.0;
-        else if (event.key.keysym.sym == SDLK_RIGHT) frog_x++;//etiSpeed = 0.3;
-        break;
-      case SDL_KEYUP:
-        //etiSpeed = 1.0;
-        break;
-      case SDL_QUIT:
-        quit = 1;
+        if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q)
+          quit = 1;
+        else if (event.key.keysym.sym == SDLK_UP)
+        {
+          if(player.Y - CELL_SIZE >= 0)
+            player.Y -= CELL_SIZE;
+        }
+        else if (event.key.keysym.sym == SDLK_DOWN)
+        {
+          if(player.Y + CELL_SIZE <= CELL_SIZE * 12)
+            player.Y += CELL_SIZE;
+        }
+        else if (event.key.keysym.sym == SDLK_LEFT)
+        {
+          if(player.X - CELL_SIZE >= 0)
+            player.X -= CELL_SIZE;
+        }
+        else if (event.key.keysym.sym == SDLK_RIGHT)
+        {
+          if(player.X + CELL_SIZE <= CELL_SIZE * 13)
+            player.X += CELL_SIZE;
+        }
         break;
       };
     };
