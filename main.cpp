@@ -413,11 +413,18 @@ int main(int argc, char **argv) {
         if (Intersects(player, endpoints[i].entity))
         {
           intersects = true;
-          endpoints[i].activated = 1;
+          if (endpoints[i].activated)
+          {
+            quit = 1;
+          }
+          else
+          {
+            endpoints[i].activated = 1;
 
-          //respawn player
-          player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
-          player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+            //respawn player
+            player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
+            player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+          }
         }
       }
       if (!intersects)
