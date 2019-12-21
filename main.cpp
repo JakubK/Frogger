@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
   SDL_Surface *eti;
   SDL_Surface *river, *road, *brick1, *frogger;
   SDL_Surface *froggger;
-  SDL_Surface *crocodilebody, *car;
+  SDL_Surface *car;
   SDL_Texture *scrtex;
   SDL_Window *window;
   SDL_Renderer *renderer;
@@ -214,12 +214,6 @@ int main(int argc, char **argv) {
   frogger = SDL_LoadBMP("frogger.bmp");
   if (frogger == NULL) {
     printf("SDL_LoadBMP(frogger.bmp) error: %s\n", SDL_GetError());
-    CloseSDL(screen, scrtex, window, renderer);
-    return 1;
-  };
-  crocodilebody = SDL_LoadBMP("crocodilebody.bmp");
-  if (crocodilebody == NULL) {
-    printf("SDL_LoadBMP(crocodilebody.bmp) error: %s\n", SDL_GetError());
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
   };
@@ -335,8 +329,8 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 3; i++)
     {
-        if (logs[i].entity.X > 2 * SCREEN_WIDTH)
-          logs[i].entity.X = 0;
+      if (logs[i].entity.X < -SCREEN_WIDTH)
+        logs[i].entity.X = SCREEN_WIDTH;
     }
 
     for (int i = 0; i < 2; i++)
@@ -349,13 +343,11 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 5; i++)
     {
       if (Intersects(player, vehicles[i].entity))
-      {
-        SDL_Quit();
-      }
+        quit = 1;
     }
 
     //Check if frog intersects with Log/Turtle
-    if (player.Y > CELL_SIZE && player.Y < CELL_SIZE * 6)
+    if (player.Y > 0 && player.Y < CELL_SIZE * 6)
     {
       bool intersects = false;
       for (int i = 0; i < 3; i++)
@@ -375,16 +367,13 @@ int main(int argc, char **argv) {
         }
       }
       if (!intersects)
-      {
-        SDL_Quit();
-      }
+        quit = 1;
     }
     SDL_FillRect(screen, NULL, ciemnoszary);
 
     //Check if Frog is out of Screen
     if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
-      SDL_Quit();
-
+      quit = 1;
 
     DrawSurface(screen, river,
       SCREEN_WIDTH / 2,
@@ -405,9 +394,6 @@ int main(int argc, char **argv) {
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 12 * CELL_SIZE);
     }
-    DrawSurface(screen, crocodilebody,
-      CELL_SIZE / 2 + 6 * CELL_SIZE,
-      CELL_SIZE / 2 + 3 * CELL_SIZE);
 
     for (int i = 0; i < 3; i++)
     {
