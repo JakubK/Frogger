@@ -126,10 +126,10 @@ int InitializeSDL(int * rc,SDL_Window ** window, SDL_Renderer ** renderer, SDL_S
     printf("SDL_Init error: %s\n", SDL_GetError());
     return 1;
   }
-  //*rc = SDL_CreateWindowAndRenderer(0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP,
-  //  window, renderer);
-  *rc = SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0,
+  *rc = SDL_CreateWindowAndRenderer(0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP,
     window, renderer);
+  //*rc = SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0,
+  //  window, renderer);
 
   if (*rc != 0)
   {
@@ -181,7 +181,7 @@ void InitializeLogs(MovingEntity logs[3][LOGS_IN_ROW], SDL_Surface * log)
       logs[i][j].direction = -1;
       logs[i][j].velocity = 100 * (i + 1);
       logs[i][j].entity.Y = i == 0 ? CELL_SIZE + CELL_SIZE / 2 : (2 + i) * CELL_SIZE + CELL_SIZE / 2;
-      logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2;
+      logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2 - log->w;
 
       logs[i][j].entity.Width = log->w;
       logs[i][j].entity.Height = CELL_SIZE;
@@ -228,6 +228,50 @@ void InitializeEndpoints(Endpoint endpoints[5])
     endpoints[i].entity.Y = CELL_SIZE / 2;
     endpoints[i].entity.X = SCREEN_WIDTH / 5 / 2 + i * SCREEN_WIDTH / 5;
     endpoints[i].entity.Width = endpoints[i].entity.Height = CELL_SIZE;
+  }
+}
+
+void UpdateLogs(MovingEntity logs[][LOGS_IN_ROW],double delta)
+{
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < LOGS_IN_ROW; j++)
+      logs[i][j].entity.X += logs[i][j].velocity * delta * logs[i][j].direction;
+
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < LOGS_IN_ROW; j++)
+      if (logs[i][j].entity.X < -SCREEN_WIDTH)
+        logs[i][j].entity.X = SCREEN_WIDTH + logs[i][j].entity.Width / 2;
+}
+
+void UpdateTurtles(MovingEntity turtles[][TURTLES_IN_ROW],double delta)
+{
+  for (int i = 0; i < 2; i++)
+    for (int j = 0; j < TURTLES_IN_ROW; j++)
+      turtles[i][j].entity.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+
+  for (int i = 0; i < 2; i++)
+    for (int j = 0; j < TURTLES_IN_ROW; j++)
+      if (turtles[i][j].entity.X > 2 * SCREEN_WIDTH)
+        turtles[i][j].entity.X = 0 - turtles[i][j].entity.Width / 2;
+}
+
+void UpdateVehicles(MovingEntity vehicles[5], double delta)
+{
+  for (int i = 0; i < 5; i++)
+    vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
+
+  for (int i = 0; i < 5; i++)
+  {
+    if (vehicles[i].direction == -1)
+    {
+      if (vehicles[i].entity.X < -SCREEN_WIDTH)
+        vehicles[i].entity.X = SCREEN_WIDTH + vehicles[i].entity.Width / 2;
+    }
+    else
+    {
+      if (vehicles[i].entity.X > 2 * SCREEN_WIDTH)
+        vehicles[i].entity.X = 0 - vehicles[i].entity.Width / 2;
+    }
   }
 }
 
@@ -318,45 +362,10 @@ int main(int argc, char **argv) {
 
     distance += etiSpeed * delta;
 
-    //move each vehicle
-    for (int i = 0; i < 5; i++)
-      vehicles[i].entity.X += vehicles[i].velocity * delta * vehicles[i].direction;
+    UpdateVehicles(vehicles, delta);
+    UpdateTurtles(turtles, delta);
+    UpdateLogs(logs, delta);
 
-    //move each log
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < LOGS_IN_ROW; j++)
-        logs[i][j].entity.X += logs[i][j].velocity * delta * logs[i][j].direction;
-
-    //move each turtle
-    for (int i = 0; i < 2; i++)
-      for(int j = 0;j < TURTLES_IN_ROW;j++)
-      turtles[i][j].entity.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
-
-    //check if it's urgent to respawn it on the opposite side
-    for (int i = 0; i < 5; i++)
-    {
-      if (vehicles[i].direction == -1)
-      {
-        if (vehicles[i].entity.X < -SCREEN_WIDTH)
-          vehicles[i].entity.X = SCREEN_WIDTH;
-      }
-      else
-      {
-        if (vehicles[i].entity.X > 2*SCREEN_WIDTH)
-          vehicles[i].entity.X = 0;
-      }
-    }
-
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < LOGS_IN_ROW; j++)
-        if (logs[i][j].entity.X < -SCREEN_WIDTH)
-          logs[i][j].entity.X = SCREEN_WIDTH;
-
-    for (int i = 0; i < 2; i++)
-      for(int j = 0;j < TURTLES_IN_ROW;j++)
-        if (turtles[i][j].entity.X >  2 * SCREEN_WIDTH)
-          turtles[i][j].entity.X = 0;
-    
     //Check if frog intersects with the space_car
     for (int i = 0; i < 5; i++)
       if (Intersects(player, vehicles[i].entity))
@@ -424,48 +433,39 @@ int main(int argc, char **argv) {
       CELL_SIZE / 2 + 9 * CELL_SIZE);
 
     for (int i = 0; i < 14; i++)
-    {
         DrawSurface(screen, brick1,
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 6 * CELL_SIZE);
-    }
+    
     for (int i = 0; i < 14; i++)
-    {
         DrawSurface(screen, brick1,
           CELL_SIZE / 2 + i * CELL_SIZE,
           CELL_SIZE / 2 + 12 * CELL_SIZE);
-    }
 
     for (int i = 0; i < 3; i++)
-    {
       for (int j = 0; j < LOGS_IN_ROW; j++)
       {
         DrawSurface(screen, log,
           logs[i][j].entity.X,
           logs[i][j].entity.Y);
-      } 
-    }
+      }
 
     for (int i = 0; i < 2; i++)
-    {
       for (int j = 0; j < TURTLES_IN_ROW; j++)
       {
         DrawSurface(screen, turtle,
           turtles[i][j].entity.X,
           turtles[i][j].entity.Y);
       }
-    }
 
     DrawSurface(screen, frogger,
       player.X,
       player.Y);
 
     for (int i = 0; i < 5; i++)
-    {
       DrawSurface(screen, vehicles[i].direction == 1 ? rocket_car : space_car,
         vehicles[i].entity.X,
         vehicles[i].entity.Y);
-    }
 
     for (int i = 0; i < 5; i++)
     {
@@ -541,11 +541,7 @@ int main(int argc, char **argv) {
 
   // zwolnienie powierzchni / freeing all surfaces
   SDL_FreeSurface(charset);
-  SDL_FreeSurface(screen);
-  SDL_DestroyTexture(scrtex);
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
+  CloseSDL(screen, scrtex, window, renderer);
 
-  SDL_Quit();
   return 0;
 };
