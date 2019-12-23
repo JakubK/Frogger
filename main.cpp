@@ -9,13 +9,13 @@ extern "C" {
 
 #define SCREEN_WIDTH	630
 #define SCREEN_HEIGHT	630
-#define INFOBOX_OFFSET	30
 #define CELL_SIZE		SCREEN_WIDTH/14
-#define FROG_SPEED		2
 
 #define LOGS_IN_ROW 5
-
 #define TURTLES_IN_ROW 3
+
+#define HITBOX_OFFSET 15
+#define BOX_OFFSET	30
 
 struct Entity
 {
@@ -183,7 +183,7 @@ void InitializeLogs(MovingEntity logs[3][LOGS_IN_ROW], SDL_Surface * log)
       logs[i][j].entity.Y = i == 0 ? CELL_SIZE + CELL_SIZE / 2 : (2 + i) * CELL_SIZE + CELL_SIZE / 2;
       logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2 - log->w;
 
-      logs[i][j].entity.Width = log->w;
+      logs[i][j].entity.Width = log->w - HITBOX_OFFSET;
       logs[i][j].entity.Height = CELL_SIZE;
     }
   }
@@ -200,7 +200,7 @@ void InitializeTurtles(MovingEntity turtles[2][TURTLES_IN_ROW], SDL_Surface * tu
       turtles[i][j].entity.Y = i == 0 ? 2 * CELL_SIZE + CELL_SIZE / 2 : 5 * CELL_SIZE + CELL_SIZE / 2;
       turtles[i][j].entity.X = (j * 8) * CELL_SIZE + SCREEN_WIDTH / 2;
 
-      turtles[i][j].entity.Width = 82;
+      turtles[i][j].entity.Width = 82 - HITBOX_OFFSET;
       turtles[i][j].entity.Height = CELL_SIZE;
     }
   }
@@ -215,7 +215,7 @@ void InitializeVehicles(MovingEntity vehicles[5], SDL_Surface * rocket_car)
     vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE / 2;
     vehicles[i].entity.X = SCREEN_WIDTH / 2;
 
-    vehicles[i].entity.Width = rocket_car->w;
+    vehicles[i].entity.Width = rocket_car->w - HITBOX_OFFSET;
     vehicles[i].entity.Height = CELL_SIZE;
   }
 }
@@ -275,6 +275,73 @@ void UpdateVehicles(MovingEntity vehicles[5], double delta)
   }
 }
 
+void RenderVehicles(MovingEntity * vehicles, SDL_Surface * screen, SDL_Surface * rocket_car, SDL_Surface * space_car)
+{
+  for (int i = 0; i < 5; i++)
+    DrawSurface(screen, vehicles[i].direction == 1 ? rocket_car : space_car,
+      vehicles[i].entity.X,
+      vehicles[i].entity.Y);
+}
+
+void RenderEnvironment(SDL_Surface * screen, SDL_Surface * road, SDL_Surface * brick)
+{
+  DrawSurface(screen, road,
+    SCREEN_WIDTH / 2,
+    CELL_SIZE / 2 + 9 * CELL_SIZE);
+
+  for (int i = 0; i < 14; i++)
+    DrawSurface(screen, brick,
+      CELL_SIZE / 2 + i * CELL_SIZE,
+      CELL_SIZE / 2 + 6 * CELL_SIZE);
+
+  for (int i = 0; i < 14; i++)
+    DrawSurface(screen, brick,
+      CELL_SIZE / 2 + i * CELL_SIZE,
+      CELL_SIZE / 2 + 12 * CELL_SIZE);
+}
+
+void RenderEndpoints(Endpoint * endpoints, SDL_Surface * screen, SDL_Surface * froggo, SDL_Surface * brick)
+{
+  for (int i = 0; i < 5; i++)
+  {
+    if (endpoints[i].activated)
+    {
+      DrawSurface(screen, froggo,
+        endpoints[i].entity.X,
+        endpoints[i].entity.Y);
+    }
+    else
+    {
+      DrawSurface(screen, brick,
+        endpoints[i].entity.X,
+        endpoints[i].entity.Y);
+    }
+  }
+}
+
+void RenderTurtles(MovingEntity turtles[][TURTLES_IN_ROW], SDL_Surface * screen, SDL_Surface * turtle)
+{
+  for (int i = 0; i < 2; i++)
+    for (int j = 0; j < TURTLES_IN_ROW; j++)
+    {
+      DrawSurface(screen, turtle,
+        turtles[i][j].entity.X,
+        turtles[i][j].entity.Y);
+    }
+
+}
+
+void RenderLogs(MovingEntity logs[][LOGS_IN_ROW], SDL_Surface * screen, SDL_Surface * log)
+{
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < LOGS_IN_ROW; j++)
+    {
+      DrawSurface(screen, log,
+        logs[i][j].entity.X,
+        logs[i][j].entity.Y);
+    }
+}
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -285,7 +352,7 @@ int main(int argc, char **argv) {
   SDL_Event event;
   SDL_Surface *screen, *charset;
   SDL_Surface *eti;
-  SDL_Surface *river, *road, *brick1, *frogger, *froggo;
+  SDL_Surface *river, *road, *brick, *frogger, *froggo;
   SDL_Surface *turtle;
   SDL_Surface *froggger;
   SDL_Surface *log;
@@ -304,7 +371,7 @@ int main(int argc, char **argv) {
   int loadingAssetsUnsuccessful = 0;
   loadingAssetsUnsuccessful = LoadAsset(&charset, "cs8x8.bmp");
   loadingAssetsUnsuccessful = LoadAsset(&froggo, "froggie.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&brick1, "brick1.bmp");
+  loadingAssetsUnsuccessful = LoadAsset(&brick, "brick1.bmp");
   loadingAssetsUnsuccessful = LoadAsset(&frogger, "frogger.bmp");
   loadingAssetsUnsuccessful = LoadAsset(&space_car, "space_car.bmp");
   loadingAssetsUnsuccessful = LoadAsset(&rocket_car, "rocket_car.bmp");
@@ -361,6 +428,12 @@ int main(int argc, char **argv) {
     worldTime += delta;
 
     distance += etiSpeed * delta;
+    fpsTimer += delta;
+    if (fpsTimer > 0.5) {
+      fps = frames * 2;
+      frames = 0;
+      fpsTimer -= 0.5;
+    }
 
     UpdateVehicles(vehicles, delta);
     UpdateTurtles(turtles, delta);
@@ -421,86 +494,35 @@ int main(int argc, char **argv) {
         quit = 1;
     }
 
-    SDL_FillRect(screen, NULL, blue);
 
     //Check if Frog is out of Screen
     if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
       quit = 1;
 
+    SDL_FillRect(screen, NULL, blue);
  
-    DrawSurface(screen, road,
-      SCREEN_WIDTH / 2,
-      CELL_SIZE / 2 + 9 * CELL_SIZE);
-
-    for (int i = 0; i < 14; i++)
-        DrawSurface(screen, brick1,
-          CELL_SIZE / 2 + i * CELL_SIZE,
-          CELL_SIZE / 2 + 6 * CELL_SIZE);
-    
-    for (int i = 0; i < 14; i++)
-        DrawSurface(screen, brick1,
-          CELL_SIZE / 2 + i * CELL_SIZE,
-          CELL_SIZE / 2 + 12 * CELL_SIZE);
-
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < LOGS_IN_ROW; j++)
-      {
-        DrawSurface(screen, log,
-          logs[i][j].entity.X,
-          logs[i][j].entity.Y);
-      }
-
-    for (int i = 0; i < 2; i++)
-      for (int j = 0; j < TURTLES_IN_ROW; j++)
-      {
-        DrawSurface(screen, turtle,
-          turtles[i][j].entity.X,
-          turtles[i][j].entity.Y);
-      }
+    RenderEnvironment(screen, road, brick);
 
     DrawSurface(screen, frogger,
       player.X,
       player.Y);
 
-    for (int i = 0; i < 5; i++)
-      DrawSurface(screen, vehicles[i].direction == 1 ? rocket_car : space_car,
-        vehicles[i].entity.X,
-        vehicles[i].entity.Y);
-
-    for (int i = 0; i < 5; i++)
-    {
-      if (endpoints[i].activated)
-      {
-        DrawSurface(screen, froggo,
-          endpoints[i].entity.X,
-          endpoints[i].entity.Y);
-      }
-      else
-      {
-        DrawSurface(screen, brick1,
-          endpoints[i].entity.X,
-          endpoints[i].entity.Y);
-      }
-    }
-
-    fpsTimer += delta;
-    if (fpsTimer > 0.5) {
-      fps = frames * 2;
-      frames = 0;
-      fpsTimer -= 0.5;
-    };
+    RenderVehicles(vehicles, screen, rocket_car, space_car);
+    RenderEndpoints(endpoints,screen,froggo,brick);
+    RenderLogs(logs, screen, log);
+    RenderTurtles(turtles, screen,turtle);
 
     // tekst informacyjny / info text
-    DrawRectangle(screen, 4, SCREEN_HEIGHT - INFOBOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
+    DrawRectangle(screen, 4, SCREEN_HEIGHT - BOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
     //            "template for the second project, elapsed time = %.1lf s  %.0lf frames / s"
     sprintf(text, "Frogger, time in game: %.1lf s  %.0lf fps", worldTime, fps);
-    DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - INFOBOX_OFFSET + 5, text, charset);
+    DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - BOX_OFFSET + 5, text, charset);
     //	      "Esc - exit, \030 - faster, \031 - slower"
     //sprintf(text, "Esc - wyjscie, \030 - przyspieszenie, \031 - zwolnienie");
     //DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, 26, text, charset);
 
     SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
-    //		SDL_RenderClear(renderer);
+    SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, scrtex, NULL, NULL);
     SDL_RenderPresent(renderer);
 
@@ -534,10 +556,10 @@ int main(int argc, char **argv) {
       case SDL_QUIT:
         quit = 1;
         break;
-      };
-    };
+      }
+    }
     frames++;
-  };
+  }
 
   // zwolnienie powierzchni / freeing all surfaces
   SDL_FreeSurface(charset);
