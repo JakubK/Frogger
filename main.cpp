@@ -143,7 +143,6 @@ int InitializeSDL(int * rc,SDL_Window ** window, SDL_Renderer ** renderer, SDL_S
   SDL_SetRenderDrawColor(*renderer, 0, 0, 0, 255);
   SDL_SetWindowTitle(*window, "Frogger");
 
-
   *screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
     0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
@@ -171,6 +170,65 @@ int LoadAsset(SDL_Surface ** asset, char * path)
     return 1;
   };
   return 0;
+}
+
+void InitializeLogs(MovingEntity logs[3][LOGS_IN_ROW], SDL_Surface * log)
+{
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < LOGS_IN_ROW; j++)
+    {
+      logs[i][j].direction = -1;
+      logs[i][j].velocity = 100 * (i + 1);
+      logs[i][j].entity.Y = i == 0 ? CELL_SIZE + CELL_SIZE / 2 : (2 + i) * CELL_SIZE + CELL_SIZE / 2;
+      logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2;
+
+      logs[i][j].entity.Width = log->w;
+      logs[i][j].entity.Height = CELL_SIZE;
+    }
+  }
+}
+
+void InitializeTurtles(MovingEntity turtles[2][TURTLES_IN_ROW], SDL_Surface * turtle)
+{
+  for (int i = 0; i < 2; i++)
+  {
+    for (int j = 0; j < TURTLES_IN_ROW; j++)
+    {
+      turtles[i][j].direction = 1;
+      turtles[i][j].velocity = 110;
+      turtles[i][j].entity.Y = i == 0 ? 2 * CELL_SIZE + CELL_SIZE / 2 : 5 * CELL_SIZE + CELL_SIZE / 2;
+      turtles[i][j].entity.X = (j * 8) * CELL_SIZE + SCREEN_WIDTH / 2;
+
+      turtles[i][j].entity.Width = 82;
+      turtles[i][j].entity.Height = CELL_SIZE;
+    }
+  }
+}
+
+void InitializeVehicles(MovingEntity vehicles[5], SDL_Surface * rocket_car)
+{
+  for (int i = 0; i < 5; i++)
+  {
+    vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
+    vehicles[i].velocity = 80 * (i + 1);
+    vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE / 2;
+    vehicles[i].entity.X = SCREEN_WIDTH / 2;
+
+    vehicles[i].entity.Width = rocket_car->w;
+    vehicles[i].entity.Height = CELL_SIZE;
+  }
+}
+
+void InitializeEndpoints(Endpoint endpoints[5])
+{
+  for (int i = 0; i < 5; i++)
+  {
+    endpoints[i].activated = 0;
+    endpoints[i].entity.Y = CELL_SIZE / 2;
+    endpoints[i].entity.X = SCREEN_WIDTH / 5 / 2 + i * SCREEN_WIDTH / 5;
+    endpoints[i].entity.Width = endpoints[i].entity.Height = CELL_SIZE;
+  }
 }
 
 #ifdef __cplusplus
@@ -220,12 +278,8 @@ int main(int argc, char **argv) {
   SDL_SetColorKey(charset, true, 0x000000);
 
   char text[128];
-  int czarny = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
-  int zielony = SDL_MapRGB(screen->format, 0x00, 0xFF, 0x00);
-  int czerwony = SDL_MapRGB(screen->format, 0xFF, 0x00, 0x00);
-  int niebieski = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
-  int ciemnoszary = SDL_MapRGB(screen->format, 0x26, 0x26, 0x26);
-  int zieloniutki = SDL_MapRGB(screen->format, 0xA8, 0xD1, 0x6F);
+  int black = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
+  int blue = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
 
   t1 = SDL_GetTicks();
 
@@ -238,55 +292,16 @@ int main(int argc, char **argv) {
   etiSpeed = 1;
 
   MovingEntity vehicles[5];
-  for (int i = 0; i < 5; i++)
-  {
-    vehicles[i].direction = (i % 2) == 0 ? 1 : -1;
-    vehicles[i].velocity = 80 * (i + 1);
-    vehicles[i].entity.Y = (7 + i) * CELL_SIZE + CELL_SIZE / 2;
-    vehicles[i].entity.X = SCREEN_WIDTH / 2;
-
-    vehicles[i].entity.Width = rocket_car->w;
-    vehicles[i].entity.Height = CELL_SIZE;
-  }
+  InitializeVehicles(vehicles,rocket_car);
 
   MovingEntity logs[3][LOGS_IN_ROW];
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0; j < LOGS_IN_ROW; j++)
-    {
-      logs[i][j].direction = -1;
-      logs[i][j].velocity = 100 * (i + 1);
-      logs[i][j].entity.Y = i == 0 ? CELL_SIZE + CELL_SIZE / 2 : (2 + i) * CELL_SIZE + CELL_SIZE / 2;
-      logs[i][j].entity.X = (j * 5) * CELL_SIZE + SCREEN_WIDTH / 2;
-
-      logs[i][j].entity.Width = log->w;
-      logs[i][j].entity.Height = CELL_SIZE;
-    }
-  }
+  InitializeLogs(logs, log);
 
   MovingEntity turtles[2][3];
-  for (int i = 0; i < 2; i++)
-  {
-    for (int j = 0; j < TURTLES_IN_ROW; j++)
-    {
-      turtles[i][j].direction = 1;
-      turtles[i][j].velocity = 110;
-      turtles[i][j].entity.Y = i == 0 ? 2 * CELL_SIZE + CELL_SIZE / 2 : 5 * CELL_SIZE + CELL_SIZE / 2;
-      turtles[i][j].entity.X = (j * 8) * CELL_SIZE + SCREEN_WIDTH / 2;
-
-      turtles[i][j].entity.Width = 82;
-      turtles[i][j].entity.Height = CELL_SIZE;
-    }
-  }
+  InitializeTurtles(turtles, turtle);
 
   Endpoint endpoints[5];
-  for (int i = 0; i < 5; i++)
-  {
-    endpoints[i].activated = 0;
-    endpoints[i].entity.Y = CELL_SIZE / 2;
-    endpoints[i].entity.X = SCREEN_WIDTH / 5 / 2 + i * SCREEN_WIDTH / 5;
-    endpoints[i].entity.Width = endpoints[i].entity.Height = CELL_SIZE;
-  }
+  InitializeEndpoints(endpoints);
 
   Entity player;
   player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
@@ -309,12 +324,8 @@ int main(int argc, char **argv) {
 
     //move each log
     for (int i = 0; i < 3; i++)
-    {
       for (int j = 0; j < LOGS_IN_ROW; j++)
-      {
         logs[i][j].entity.X += logs[i][j].velocity * delta * logs[i][j].direction;
-      }
-    }
 
     //move each turtle
     for (int i = 0; i < 2; i++)
@@ -337,27 +348,19 @@ int main(int argc, char **argv) {
     }
 
     for (int i = 0; i < 3; i++)
-    {
       for (int j = 0; j < LOGS_IN_ROW; j++)
-      {
         if (logs[i][j].entity.X < -SCREEN_WIDTH)
           logs[i][j].entity.X = SCREEN_WIDTH;
-      }
-    }
 
     for (int i = 0; i < 2; i++)
-    {
       for(int j = 0;j < TURTLES_IN_ROW;j++)
         if (turtles[i][j].entity.X >  2 * SCREEN_WIDTH)
           turtles[i][j].entity.X = 0;
-    }
-
+    
     //Check if frog intersects with the space_car
     for (int i = 0; i < 5; i++)
-    {
       if (Intersects(player, vehicles[i].entity))
         quit = 1;
-    }
 
     //Check if frog intersects with Log/Turtle/Endpoint
     if (player.Y > 0 && player.Y < CELL_SIZE * 6)
@@ -409,7 +412,7 @@ int main(int argc, char **argv) {
         quit = 1;
     }
 
-    SDL_FillRect(screen, NULL, niebieski);
+    SDL_FillRect(screen, NULL, blue);
 
     //Check if Frog is out of Screen
     if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
@@ -488,7 +491,7 @@ int main(int argc, char **argv) {
     };
 
     // tekst informacyjny / info text
-    DrawRectangle(screen, 4, SCREEN_HEIGHT - INFOBOX_OFFSET, SCREEN_WIDTH - 8, 18, zieloniutki, czarny);
+    DrawRectangle(screen, 4, SCREEN_HEIGHT - INFOBOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
     //            "template for the second project, elapsed time = %.1lf s  %.0lf frames / s"
     sprintf(text, "Frogger, time in game: %.1lf s  %.0lf fps", worldTime, fps);
     DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - INFOBOX_OFFSET + 5, text, charset);
@@ -508,17 +511,25 @@ int main(int argc, char **argv) {
         if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q)
           quit = 1;
         else if (event.key.keysym.sym == SDLK_UP)
-          if(player.Y - CELL_SIZE >= 0)
+        {
+          if (player.Y - CELL_SIZE >= 0)
             player.Y -= CELL_SIZE;
+        }
         else if (event.key.keysym.sym == SDLK_DOWN)
-          if(player.Y + CELL_SIZE <= CELL_SIZE * 13)
+        {
+          if (player.Y + CELL_SIZE <= CELL_SIZE * 13)
             player.Y += CELL_SIZE;
+        }
         else if (event.key.keysym.sym == SDLK_LEFT)
-          if(player.X - CELL_SIZE >= 0)
+        {
+          if (player.X - CELL_SIZE >= 0)
             player.X -= CELL_SIZE;
+        }
         else if (event.key.keysym.sym == SDLK_RIGHT)
-          if(player.X + CELL_SIZE <= CELL_SIZE * 14)
+        {
+          if (player.X + CELL_SIZE <= CELL_SIZE * 14)
             player.X += CELL_SIZE;
+        }
         break;
       case SDL_QUIT:
         quit = 1;
