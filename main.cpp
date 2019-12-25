@@ -16,6 +16,9 @@ extern "C" {
 
 #define BOX_OFFSET	30
 
+#define FROGGER_INIT_CELL_X 5
+#define FROGGER_INIT_CELL_Y 12
+
 struct Entity
 {
   float X, Y, Width, Height;
@@ -415,8 +418,8 @@ int main(int argc, char **argv) {
   InitializeEndpoints(endpoints);
 
   Entity player;
-  player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
-  player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+  player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+  player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
   player.Width = player.Height = CELL_SIZE;
 
   while (!quit) {
@@ -485,8 +488,8 @@ int main(int argc, char **argv) {
             endpoints[i].activated = 1;
 
             //respawn player
-            player.X = 7 * CELL_SIZE + CELL_SIZE / 2;
-            player.Y = 12 * CELL_SIZE + CELL_SIZE / 2;
+            player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+            player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
           }
         }
       }
