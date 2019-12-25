@@ -168,16 +168,15 @@ void CloseSDL(SDL_Surface *screen, SDL_Texture *scrtex, SDL_Window *window, SDL_
   SDL_Quit();
 }
 
-int LoadAsset(SDL_Surface ** asset, char * path)
+void LoadAsset(SDL_Surface ** asset, char * path, int * successIndicator)
 {
   *asset = SDL_LoadBMP(path);
   if (*asset == NULL) {
-    printf("SDL_LoadBMP(%s) error: %s\n",path, SDL_GetError());
-    return 1;
+    printf("SDL_LoadBMP(%s) error: %s\n", path, SDL_GetError());
+    if (successIndicator == 0)
+      *successIndicator = 1;
   };
-  return 0;
 }
-
 void InitializeLogs(MovingEntity logs[3][LOGS_IN_ROW], SDL_Surface * log)
 {
   for (int i = 0; i < 3; i++)
@@ -371,19 +370,19 @@ int main(int argc, char **argv) {
   if (initUnsuccessful)
     return 1;
 
-  int loadingAssetsUnsuccessful = 0;
-  loadingAssetsUnsuccessful = LoadAsset(&charset, "cs8x8.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&froggo, "froggie.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&brick, "brick1.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&frogger, "frogger.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&space_car, "space_car.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&rocket_car, "rocket_car.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&log, "log_medium.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&turtle, "double_turtles.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&road, "road.bmp");
-  loadingAssetsUnsuccessful = LoadAsset(&froggo, "froggie.bmp");
+  int failedLoading = 0;
+  LoadAsset(&charset, "cs8x8.bmp", &failedLoading);
+  LoadAsset(&froggo, "froggie.bmp", &failedLoading);
+  LoadAsset(&brick, "brick1.bmp", &failedLoading);
+  LoadAsset(&frogger, "frogger.bmp", &failedLoading);
+  LoadAsset(&space_car, "space_car.bmp", &failedLoading);
+  LoadAsset(&rocket_car, "rocket_car.bmp", &failedLoading);
+  LoadAsset(&log, "log_medium.bmp", &failedLoading);
+  LoadAsset(&turtle, "double_turtles.bmp", &failedLoading);
+  LoadAsset(&road, "road.bmp", &failedLoading);
+  LoadAsset(&froggo, "froggie.bmp", &failedLoading);
 
-  if (loadingAssetsUnsuccessful)
+  if (failedLoading)
   {
     CloseSDL(screen, scrtex, window, renderer);
     return 1;
