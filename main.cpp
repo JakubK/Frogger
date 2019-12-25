@@ -452,49 +452,63 @@ int main(int argc, char **argv) {
     //Check if frog intersects with Log/Turtle/Endpoint
     if (player.Y > 0 && player.Y < CELL_SIZE * 6)
     {
-      bool intersects = false;
+      int intersects = 0;
       for (int i = 0; i < 3; i++)
       {
         for (int j = 0; j < LOGS_IN_ROW; j++)
         {
           if (Intersects(player, logs[i][j].entity))
           {
-            intersects = true;
+            intersects = 1;
             player.X += logs[i][j].velocity * delta * logs[i][j].direction;
+            break;
           }
         }
+        if (intersects)
+          break;
         
       }
-      for (int i = 0; i < 2; i++)
+      if (!intersects) 
       {
-        for (int j = 0; j < TURTLES_IN_ROW; j++)
+        for (int i = 0; i < 2; i++)
         {
-          if (Intersects(player, turtles[i][j].entity))
+          for (int j = 0; j < TURTLES_IN_ROW; j++)
           {
-            intersects = true;
-            player.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+            if (Intersects(player, turtles[i][j].entity))
+            {
+              intersects = 1;
+              player.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+              break;
+            }
           }
+          if (intersects)
+            break;
         }
       }
-      for (int i = 0; i < 5; i++)
-      {
-        if (Intersects(player, endpoints[i].entity))
-        {
-          intersects = true;
-          if (endpoints[i].activated)
-          {
-            quit = 1;
-          }
-          else
-          {
-            endpoints[i].activated = 1;
 
-            //respawn player
-            player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
-            player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+      if (!intersects) 
+      {
+        for (int i = 0; i < 5; i++)
+        {
+          if (Intersects(player, endpoints[i].entity))
+          {
+            intersects = 1;
+            if (endpoints[i].activated)
+            {
+              quit = 1;
+            }
+            else
+            {
+              endpoints[i].activated = 1;
+
+              //respawn player
+              player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+              player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+            }
           }
         }
       }
+
       if (!intersects)
         quit = 1;
     }
