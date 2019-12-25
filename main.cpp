@@ -453,12 +453,16 @@ int main(int argc, char **argv) {
   Endpoint endpoints[5];
   InitializeEndpoints(endpoints);
 
-  Entity player;
-  player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
-  player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
-  player.Width = player.Height = CELL_SIZE;
+  Player player;
+  player.Lives = PLAYER_LIVES;
+  player.entity.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+  player.entity.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+  player.entity.Width = player.entity.Height = CELL_SIZE;
 
-  while (!quit) {
+  int isPlayerDead = 0;
+
+  while (!quit) 
+  {
     t2 = SDL_GetTicks();
 
     delta = (t2 - t1) * 0.001;
@@ -474,138 +478,179 @@ int main(int argc, char **argv) {
       fpsTimer -= 0.5;
     }
 
-    UpdateVehicles(vehicles, delta);
-    UpdateTurtles(turtles, delta);
-    UpdateLogs(logs, delta);
-
-    //Check if frog intersects with the space_car
-    for (int i = 0; i < 5; i++)
-      if (Intersects(player, vehicles[i].entity))
-        quit = 1;
-
-    //Check if frog intersects with Log/Turtle/Endpoint
-    if (player.Y > 0 && player.Y < CELL_SIZE * 6)
+    if (!isPlayerDead) 
     {
-      int intersects = 0;
-      for (int i = 0; i < 3; i++)
-      {
-        for (int j = 0; j < LOGS_IN_ROW; j++)
+      UpdateVehicles(vehicles, delta);
+      UpdateTurtles(turtles, delta);
+      UpdateLogs(logs, delta);
+
+      //Check if frog intersects with the space_car
+      for (int i = 0; i < 5; i++)
+        if (Intersects(player.entity, vehicles[i].entity))
         {
-          if (Intersects(player, logs[i][j].entity))
-          {
-            intersects = 1;
-            player.X += logs[i][j].velocity * delta * logs[i][j].direction;
-            break;
-          }
+          //quit = 1;
+          KillPlayer(&player, &isPlayerDead);
         }
-        if (intersects)
-          break;
-        
-      }
-      if (!intersects) 
+
+      //Check if frog intersects with Log/Turtle/Endpoint
+      if (player.entity.Y > 0 && player.entity.Y < CELL_SIZE * 6)
       {
-        for (int i = 0; i < 2; i++)
+        int intersects = 0;
+        for (int i = 0; i < 3; i++)
         {
-          for (int j = 0; j < TURTLES_IN_ROW; j++)
+          for (int j = 0; j < LOGS_IN_ROW; j++)
           {
-            if (Intersects(player, turtles[i][j].entity))
+            if (Intersects(player.entity, logs[i][j].entity))
             {
               intersects = 1;
-              player.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+              player.entity.X += logs[i][j].velocity * delta * logs[i][j].direction;
               break;
             }
           }
           if (intersects)
             break;
+
         }
-      }
-
-      if (!intersects) 
-      {
-        for (int i = 0; i < 5; i++)
+        if (!intersects)
         {
-          if (Intersects(player, endpoints[i].entity))
+          for (int i = 0; i < 2; i++)
           {
-            intersects = 1;
-            if (endpoints[i].activated)
+            for (int j = 0; j < TURTLES_IN_ROW; j++)
             {
-              quit = 1;
+              if (Intersects(player.entity, turtles[i][j].entity))
+              {
+                intersects = 1;
+                player.entity.X += turtles[i][j].velocity * delta * turtles[i][j].direction;
+                break;
+              }
             }
-            else
-            {
-              endpoints[i].activated = 1;
+            if (intersects)
+              break;
+          }
+        }
 
-              //respawn player
-              player.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
-              player.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+        if (!intersects)
+        {
+          for (int i = 0; i < 5; i++)
+          {
+            if (Intersects(player.entity, endpoints[i].entity))
+            {
+              intersects = 1;
+              if (endpoints[i].activated)
+              {
+                //quit = 1;
+                KillPlayer(&player, &isPlayerDead);
+              }
+              else
+              {
+                endpoints[i].activated = 1;
+
+                //respawn player
+                player.entity.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+                player.entity.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+              }
             }
           }
         }
+
+        if (!intersects)
+        {
+          //quit = 1;
+          KillPlayer(&player, &isPlayerDead);
+        }
       }
 
-      if (!intersects)
-        quit = 1;
-    }
+      //Check if Frog is out of Screen
+      if (player.entity.X < -CELL_SIZE || player.entity.X > SCREEN_WIDTH + CELL_SIZE)
+      {
+        //quit = 1;
+        KillPlayer(&player, &isPlayerDead);
 
+      }
 
-    //Check if Frog is out of Screen
-    if (player.X < -CELL_SIZE || player.X > SCREEN_WIDTH + CELL_SIZE)
-      quit = 1;
+      SDL_FillRect(screen, NULL, blue);
 
-    SDL_FillRect(screen, NULL, blue);
- 
-    RenderEnvironment(screen, road, brick);
-    RenderEndpoints(endpoints, screen, froggo, brick);
-    RenderLogs(logs, screen, log);
-    RenderTurtles(turtles, screen, turtle);
+      RenderEnvironment(screen, road, brick);
+      RenderEndpoints(endpoints, screen, froggo, brick);
+      RenderLogs(logs, screen, log);
+      RenderTurtles(turtles, screen, turtle);
 
-    DrawSurface(screen, frogger,
-      player.X,
-      player.Y);
+      DrawSurface(screen, frogger,
+        player.entity.X,
+        player.entity.Y);
 
-    RenderVehicles(vehicles, screen, rocket_car, space_car);
+      RenderVehicles(vehicles, screen, rocket_car, space_car);
 
+      DrawRectangle(screen, 4, SCREEN_HEIGHT - BOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
+      sprintf(text, "Frogger, time in game: %.1lf s  %.0lf fps Number of lives remaining: %d", worldTime, fps, player.Lives);
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - BOX_OFFSET + 5, text, charset);
+      SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+      SDL_RenderClear(renderer);
+      SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+      SDL_RenderPresent(renderer);
 
-    DrawRectangle(screen, 4, SCREEN_HEIGHT - BOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
-    sprintf(text, "Frogger, time in game: %.1lf s  %.0lf fps", worldTime, fps);
-    DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - BOX_OFFSET + 5, text, charset);
-    SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, scrtex, NULL, NULL);
-    SDL_RenderPresent(renderer);
-
-    // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
-    while (SDL_PollEvent(&event)) {
-      switch (event.type) {
-      case SDL_KEYDOWN:
-        if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q)
+      // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q)
+            quit = 1;
+          else if (event.key.keysym.sym == SDLK_UP)
+          {
+            if (player.entity.Y - CELL_SIZE >= 0)
+              player.entity.Y -= CELL_SIZE;
+          }
+          else if (event.key.keysym.sym == SDLK_DOWN)
+          {
+            if (player.entity.Y + CELL_SIZE <= CELL_SIZE * 13)
+              player.entity.Y += CELL_SIZE;
+          }
+          else if (event.key.keysym.sym == SDLK_LEFT)
+          {
+            if (player.entity.X - CELL_SIZE >= 0)
+              player.entity.X -= CELL_SIZE;
+          }
+          else if (event.key.keysym.sym == SDLK_RIGHT)
+          {
+            if (player.entity.X + CELL_SIZE <= CELL_SIZE * 14)
+              player.entity.X += CELL_SIZE;
+          }
+          break;
+        case SDL_QUIT:
           quit = 1;
-        else if (event.key.keysym.sym == SDLK_UP)
-        {
-          if (player.Y - CELL_SIZE >= 0)
-            player.Y -= CELL_SIZE;
+          break;
         }
-        else if (event.key.keysym.sym == SDLK_DOWN)
-        {
-          if (player.Y + CELL_SIZE <= CELL_SIZE * 13)
-            player.Y += CELL_SIZE;
-        }
-        else if (event.key.keysym.sym == SDLK_LEFT)
-        {
-          if (player.X - CELL_SIZE >= 0)
-            player.X -= CELL_SIZE;
-        }
-        else if (event.key.keysym.sym == SDLK_RIGHT)
-        {
-          if (player.X + CELL_SIZE <= CELL_SIZE * 14)
-            player.X += CELL_SIZE;
-        }
-        break;
-      case SDL_QUIT:
-        quit = 1;
-        break;
       }
     }
+    else
+    {
+      SDL_FillRect(screen, NULL, blue);
+      DrawRectangle(screen, 0, SCREEN_HEIGHT/2, SCREEN_WIDTH, 18, black, black);
+      sprintf(text, "Game Over! Do you want to quit the game? Y/N ");
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT/2 + 6, text, charset);
+      SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+      SDL_RenderClear(renderer);
+      SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+      SDL_RenderPresent(renderer);
+
+      // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q || event.key.keysym.sym == SDLK_y)
+            quit = 1;
+          else if (event.key.keysym.sym == SDLK_n)
+          {
+            ResetGame(&player, endpoints, &isPlayerDead);
+          }
+          break;
+        case SDL_QUIT:
+          quit = 1;
+          break;
+        }
+      }
+    }
+    
     frames++;
   }
   
