@@ -430,7 +430,8 @@ int main(int argc, char **argv) {
   char text[128];
   int black = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
   int blue = SDL_MapRGB(screen->format, 0x11, 0x11, 0xCC);
-
+  int green = SDL_MapRGB(screen->format, 0x00, 0xFF, 0x00);
+  int red = SDL_MapRGB(screen->format, 0xFF, 0x00, 0x00);
   t1 = SDL_GetTicks();
 
   frames = 0;
@@ -582,8 +583,16 @@ int main(int argc, char **argv) {
       RenderVehicles(vehicles, screen, rocket_car, space_car);
 
       DrawRectangle(screen, 4, SCREEN_HEIGHT - BOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
-      sprintf(text, "Frogger, time in game: %.1lf s  %.0lf fps Number of lives remaining: %d", worldTime, fps, player.Lives);
+      sprintf(text, "Frogger's lives remaining: %d", player.Lives);
       DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - BOX_OFFSET + 5, text, charset);
+      //Draw Time Progressbar 
+      if (worldTime >= 50)
+      {
+        KillPlayer(&player, &isPlayerDead);
+        worldTime = 0;
+      }
+      DrawRectangle(screen, SCREEN_WIDTH - 100, SCREEN_HEIGHT - BOX_OFFSET, 100 - ((int)worldTime * 2), 18, black, worldTime >= 40 ? red : green);
+
       SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
       SDL_RenderClear(renderer);
       SDL_RenderCopy(renderer, scrtex, NULL, NULL);
