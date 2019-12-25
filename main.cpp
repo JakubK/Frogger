@@ -19,11 +19,18 @@ extern "C" {
 #define FROGGER_INIT_CELL_X 5
 #define FROGGER_INIT_CELL_Y 12
 
+#define PLAYER_LIVES 5
+
 struct Entity
 {
   float X, Y, Width, Height;
 };
 
+struct Player
+{
+  Entity entity;
+  int Lives;
+};
 struct MovingEntity
 {
   Entity entity;
@@ -350,6 +357,20 @@ void RenderLogs(MovingEntity logs[][LOGS_IN_ROW], SDL_Surface * screen, SDL_Surf
     }
 }
 
+void KillPlayer(Player * player, int * deathIndicator) 
+{
+  if (player->Lives > 1)
+  {
+    player->Lives--;
+    player->entity.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+    player->entity.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+  }
+  else
+  {
+    *deathIndicator = 1;
+    SDL_Delay(1000);
+  }
+}
 #ifdef __cplusplus
 extern "C"
 #endif
