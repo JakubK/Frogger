@@ -31,6 +31,7 @@ struct Player
   Entity entity;
   int Lives;
 };
+
 struct MovingEntity
 {
   Entity entity;
@@ -168,7 +169,6 @@ int InitializeSDL(int * rc,SDL_Window ** window, SDL_Renderer ** renderer, SDL_S
 
 void CloseSDL(SDL_Surface *screen, SDL_Texture *scrtex, SDL_Window *window, SDL_Renderer *renderer)
 {
-  SDL_Delay(1000);
 
   SDL_FreeSurface(screen);
   SDL_DestroyTexture(scrtex);
@@ -371,6 +371,19 @@ void KillPlayer(Player * player, int * deathIndicator)
     SDL_Delay(1000);
   }
 }
+
+void ResetGame(Player * player, Endpoint * endpoints, int * deathIndicator)
+{
+  *deathIndicator = 0;
+  player->Lives = PLAYER_LIVES;
+  for (int i = 0; i < 5; i++)
+  {
+    endpoints[i].activated = 0;
+  }
+  player->entity.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
+  player->entity.Y = FROGGER_INIT_CELL_Y * CELL_SIZE + CELL_SIZE / 2;
+}
+
 #ifdef __cplusplus
 extern "C"
 #endif
