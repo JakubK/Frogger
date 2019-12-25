@@ -36,10 +36,10 @@ struct Endpoint
 
 int Intersects(Entity first, Entity second)
 {
-  if (first.X < second.X + second.Width
-    && first.X + first.Width > second.X
-    && first.Y < second.Y + second.Height
-    && first.Y + first.Height > second.Y)
+  if (first.X - first.Width/2 < second.X - second.Width/2 + second.Width
+    && first.X  - first.Width/2 + first.Width > second.X - second.Width/2
+    && first.Y  - first.Height/2< second.Y - second.Height/2 + second.Height
+    && first.Y - first.Height/2 + first.Height > second.Y - second.Height/2)
     return 1;
   return 0;
 }
