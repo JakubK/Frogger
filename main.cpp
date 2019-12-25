@@ -161,10 +161,13 @@ int InitializeSDL(int * rc,SDL_Window ** window, SDL_Renderer ** renderer, SDL_S
 
 void CloseSDL(SDL_Surface *screen, SDL_Texture *scrtex, SDL_Window *window, SDL_Renderer *renderer)
 {
+  SDL_Delay(1000);
+
   SDL_FreeSurface(screen);
   SDL_DestroyTexture(scrtex);
   SDL_DestroyWindow(window);
   SDL_DestroyRenderer(renderer);
+
   SDL_Quit();
 }
 
