@@ -372,9 +372,10 @@ void KillPlayer(Player * player, int * deathIndicator)
   }
 }
 
-void ResetGame(Player * player, Endpoint * endpoints, int * deathIndicator)
+void ResetGame(Player * player, Endpoint * endpoints,double * time,  int * deathIndicator)
 {
   *deathIndicator = 0;
+  *time = 0;
   player->Lives = PLAYER_LIVES;
   for (int i = 0; i < 5; i++)
   {
@@ -389,8 +390,8 @@ extern "C"
 #endif
 
 int main(int argc, char **argv) {
-  int t1, t2, quit, frames, rc;
-  double delta, worldTime, fpsTimer, fps, distance, etiSpeed;
+  int t1, t2, quit, frames, rc, menuOption;
+  double delta, worldTime, fpsTimer, fps, pause;
   SDL_Event event;
   SDL_Surface *screen, *charset;
   SDL_Surface *eti;
@@ -434,13 +435,13 @@ int main(int argc, char **argv) {
   int red = SDL_MapRGB(screen->format, 0xFF, 0x00, 0x00);
   t1 = SDL_GetTicks();
 
+  menuOption = 0;
   frames = 0;
   fpsTimer = 0;
   fps = 0;
   quit = 0;
   worldTime = 0;
-  distance = 0;
-  etiSpeed = 1;
+  pause = 3;
 
   MovingEntity vehicles[5];
   InitializeVehicles(vehicles,rocket_car);
@@ -465,13 +466,11 @@ int main(int argc, char **argv) {
   while (!quit) 
   {
     t2 = SDL_GetTicks();
-
-    delta = (t2 - t1) * 0.001;
+    delta = pause == 0 ? (t2 - t1) * 0.001 : 0;
     t1 = t2;
 
     worldTime += delta;
 
-    distance += etiSpeed * delta;
     fpsTimer += delta;
     if (fpsTimer > 0.5) {
       fps = frames * 2;
@@ -479,7 +478,7 @@ int main(int argc, char **argv) {
       fpsTimer -= 0.5;
     }
 
-    if (!isPlayerDead) 
+    if (!isPlayerDead && pause == 0) 
     {
       UpdateVehicles(vehicles, delta);
       UpdateTurtles(turtles, delta);
@@ -489,7 +488,6 @@ int main(int argc, char **argv) {
       for (int i = 0; i < 5; i++)
         if (Intersects(player.entity, vehicles[i].entity))
         {
-          //quit = 1;
           KillPlayer(&player, &isPlayerDead);
         }
 
@@ -539,12 +537,13 @@ int main(int argc, char **argv) {
               intersects = 1;
               if (endpoints[i].activated)
               {
-                //quit = 1;
                 KillPlayer(&player, &isPlayerDead);
               }
               else
               {
+                //activate endpoint and reset timer
                 endpoints[i].activated = 1;
+                worldTime = 0;
 
                 //respawn player
                 player.entity.X = FROGGER_INIT_CELL_X * CELL_SIZE + CELL_SIZE / 2;
@@ -555,19 +554,12 @@ int main(int argc, char **argv) {
         }
 
         if (!intersects)
-        {
-          //quit = 1;
           KillPlayer(&player, &isPlayerDead);
-        }
       }
 
       //Check if Frog is out of Screen
       if (player.entity.X < -CELL_SIZE || player.entity.X > SCREEN_WIDTH + CELL_SIZE)
-      {
-        //quit = 1;
         KillPlayer(&player, &isPlayerDead);
-
-      }
 
       SDL_FillRect(screen, NULL, blue);
 
@@ -585,18 +577,15 @@ int main(int argc, char **argv) {
       DrawRectangle(screen, 4, SCREEN_HEIGHT - BOX_OFFSET, SCREEN_WIDTH - 8, 18, black, black);
       sprintf(text, "Frogger's lives remaining: %d", player.Lives);
       DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT - BOX_OFFSET + 5, text, charset);
+
       //Draw Time Progressbar 
       if (worldTime >= 50)
       {
         KillPlayer(&player, &isPlayerDead);
         worldTime = 0;
       }
-      DrawRectangle(screen, SCREEN_WIDTH - 100, SCREEN_HEIGHT - BOX_OFFSET, 100 - ((int)worldTime * 2), 18, black, worldTime >= 40 ? red : green);
 
-      SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
-      SDL_RenderClear(renderer);
-      SDL_RenderCopy(renderer, scrtex, NULL, NULL);
-      SDL_RenderPresent(renderer);
+      DrawRectangle(screen, SCREEN_WIDTH - 100, SCREEN_HEIGHT - BOX_OFFSET, 100 - (worldTime * 2), 18, black, worldTime >= 40 ? red : green);
 
       // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
       while (SDL_PollEvent(&event)) {
@@ -624,6 +613,10 @@ int main(int argc, char **argv) {
             if (player.entity.X + CELL_SIZE <= CELL_SIZE * 14)
               player.entity.X += CELL_SIZE;
           }
+          else if (event.key.keysym.sym == SDLK_p)
+          {
+            pause = !pause;
+          }
           break;
         case SDL_QUIT:
           quit = 1;
@@ -631,16 +624,106 @@ int main(int argc, char **argv) {
         }
       }
     }
-    else
+    else if (pause == 1) //Pause Screen
+    {
+      SDL_FillRect(screen, NULL, blue);
+      DrawRectangle(screen, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, 18, black, black);
+      sprintf(text, "Game Paused! Press P to unpause or Q to quit");
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT / 2 + 6, text, charset);
+
+      // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_p)
+          {
+            pause = !pause;
+          }
+          else if (event.key.keysym.sym == SDLK_q)
+          {
+            pause = 2;
+          }
+          break;
+        case SDL_QUIT:
+          quit = 1;
+          break;
+        }
+      }
+    }
+    else if (pause == 2) //quit game ?
+    {
+      SDL_FillRect(screen, NULL, blue);
+      DrawRectangle(screen, 0, SCREEN_HEIGHT / 2, SCREEN_WIDTH, 18, black, black);
+      sprintf(text, "QUIT GAME ? Y/N");
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT / 2 + 6, text, charset);
+
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q || event.key.keysym.sym == SDLK_y)
+          {
+            //navigate to menu
+            pause = 3;
+          }
+          else if (event.key.keysym.sym == SDLK_n)
+          {
+            pause = 1;
+          }
+          break;
+        case SDL_QUIT:
+          quit = 1;
+          break;
+        }
+      }
+    }
+    else if (pause == 3)
+    {
+      SDL_FillRect(screen, NULL, black);
+
+      sprintf(text, "Start Game");
+      DrawRectangle(screen, 0, SCREEN_HEIGHT / 2 + 12 * menuOption, SCREEN_WIDTH, 18, blue, blue);
+
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT / 2 + 6, text, charset);
+
+      sprintf(text, "Exit");
+      DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT / 2 + 18, text, charset);
+
+      while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_KEYDOWN:
+          if (event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q || event.key.keysym.sym == SDLK_y)
+            quit = 1;
+          else if (event.key.keysym.sym == SDLK_s)
+          {
+            menuOption = abs((menuOption + 1) % 2);
+          }
+          else if (event.key.keysym.sym == SDLK_w)
+          {
+            menuOption = abs((menuOption - 1) % 2);
+          }
+          else if (event.key.keysym.sym == SDLK_RETURN)
+          {
+            if (menuOption == 0)
+            {
+              pause = 0;
+              ResetGame(&player, endpoints, &worldTime, &isPlayerDead);
+            }
+            else
+              quit = 1;
+          }
+          break;
+        case SDL_QUIT:
+          quit = 1;
+          break;
+        }
+      }
+    }
+    else //Game Over Screen
     {
       SDL_FillRect(screen, NULL, blue);
       DrawRectangle(screen, 0, SCREEN_HEIGHT/2, SCREEN_WIDTH, 18, black, black);
       sprintf(text, "Game Over! Do you want to quit the game? Y/N ");
       DrawString(screen, screen->w / 2 - strlen(text) * 8 / 2, SCREEN_HEIGHT/2 + 6, text, charset);
-      SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
-      SDL_RenderClear(renderer);
-      SDL_RenderCopy(renderer, scrtex, NULL, NULL);
-      SDL_RenderPresent(renderer);
 
       // obs³uga zdarzeñ (o ile jakieœ zasz³y) / handling of events (if there were any)
       while (SDL_PollEvent(&event)) {
@@ -650,7 +733,7 @@ int main(int argc, char **argv) {
             quit = 1;
           else if (event.key.keysym.sym == SDLK_n)
           {
-            ResetGame(&player, endpoints, &isPlayerDead);
+            ResetGame(&player, endpoints, &worldTime, &isPlayerDead);
           }
           break;
         case SDL_QUIT:
@@ -659,11 +742,14 @@ int main(int argc, char **argv) {
         }
       }
     }
-    
+
+    SDL_UpdateTexture(scrtex, NULL, screen->pixels, screen->pitch);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, scrtex, NULL, NULL);
+    SDL_RenderPresent(renderer);
     frames++;
   }
   
-
   // zwolnienie powierzchni / freeing all surfaces
   SDL_FreeSurface(charset);
   CloseSDL(screen, scrtex, window, renderer);
